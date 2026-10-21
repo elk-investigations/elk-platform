@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  elk-client:
+    build: .
+    container_name: elk-client
+    restart: always
+    ports:
+      - "8070:8070"
+    volumes:
+      - /volume1/ELK-Bussiness:/nas:ro
+      - elk_client_db:/app/db
+    environment:
+      - PORT=8070
+      - NAS_PATH=/nas
+      - NODE_ENV=production
+    env_file:
+      - .env
+
+volumes:
+  elk_client_db:

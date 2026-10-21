@@ -1,0 +1,21 @@
+name: Deploy elk-client
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'elk-client/**'
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy
+        run: |
+          cd $GITHUB_WORKSPACE/elk-client
+          cp /volume1/ELK-Bussiness/01\ —\ ELK\ Internal/Tools/elk-client/.env .env
+          docker compose up --build -d
+          rm -f .env

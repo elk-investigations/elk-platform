@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Not Authorized — ELK Investigations</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@400;500;600&display=swap">
+<style>
+  :root {
+    --navy:   #091422;
+    --navy-2: #0D1E35;
+    --teal:   #4DC9A7;
+    --gold:   #D4A843;
+    --text-1: #F0EDE6;
+    --text-2: #C4D0E4;
+    --text-3: #7A9ABB;
+    --line:   rgba(77,201,167,.18);
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: var(--navy);
+    color: var(--text-1);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 24px;
+  }
+  .card {
+    background: var(--navy-2);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 52px 48px;
+    max-width: 480px;
+    width: 100%;
+    text-align: center;
+  }
+  .monogram {
+    width: 56px; height: 56px;
+    background: rgba(77,201,167,.12);
+    border: 1px solid var(--teal);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Playfair Display', serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--teal);
+    margin: 0 auto 28px;
+  }
+  h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.6rem;
+    font-weight: 700;
+    margin-bottom: 16px;
+  }
+  p {
+    font-size: .95rem;
+    color: var(--text-2);
+    line-height: 1.7;
+    margin-bottom: 32px;
+  }
+  .contact-box {
+    background: rgba(77,201,167,.06);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 20px 24px;
+    font-size: .9rem;
+    color: var(--text-3);
+    line-height: 1.8;
+  }
+  .contact-box a {
+    color: var(--teal);
+    text-decoration: none;
+  }
+  .footer {
+    margin-top: 36px;
+    font-size: .72rem;
+    color: var(--text-3);
+    letter-spacing: .06em;
+  }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="monogram">ELK</div>
+  <h1>Account Not Found</h1>
+  <p>
+    Your email address is verified, but a client portal account hasn't been set up yet.
+    Please contact ELK Investigations to get access.
+  </p>
+  <div class="contact-box">
+    <strong style="color:var(--text-1)">ELK Investigations LLC</strong><br>
+    <a href="mailto:elk@elkinvestigations.com">elk@elkinvestigations.com</a><br>
+    NYS PI License ****217655
+  </div>
+  <div class="footer">All portal access is logged and monitored.</div>
+</div>
+</body>
+</html>
