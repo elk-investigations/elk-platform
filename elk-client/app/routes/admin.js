@@ -108,6 +108,15 @@ router.patch('/cases/:caseId/status', requireAdmin, (req, res) => {
   res.json({ ok: true });
 });
 
+// Set Synology deliverables share link on a case
+router.patch('/cases/:caseId/deliverables', requireAdmin, (req, res) => {
+  const { deliverables_url, deliverables_label } = req.body;
+  db.prepare(`
+    UPDATE cases SET deliverables_url = ?, deliverables_label = ?, updated_at = datetime('now') WHERE id = ?
+  `).run(deliverables_url || null, deliverables_label || 'View Deliverables', req.params.caseId);
+  res.json({ ok: true });
+});
+
 // Get all cases (admin view)
 router.get('/cases', requireAdmin, (req, res) => {
   const cases = db.prepare(`
@@ -116,6 +125,33 @@ router.get('/cases', requireAdmin, (req, res) => {
     ORDER BY c.updated_at DESC
   `).all();
   res.json(cases);
+});
+
+// Get case detail (admin view)
+router.get('/cases/:caseId', requireAdmin, (req, res) => {
+  const c = db.prepare(`
+    SELECT c.*, cl.name as client_name, cl.email as client_email
+    FROM cases c JOIN clients cl ON c.client_id = cl.id
+    WHERE c.id = ?
+  `).get(req.params.caseId);
+  if (!c) return res.status(404).json({ error: 'Not found' });
+  const updates = db.prepare(`SELECT * FROM case_updates WHERE case_id = ? ORDER BY created_at DESC`).all(c.id);
+  res.json({ case: c, updates });
+});
+
+// Audit log — deliverables access
+router.get('/audit-log', requireAdmin, (req, res) => {
+  const log = db.prepare(`
+    SELECT * FROM deliverables_access_log ORDER BY accessed_at DESC LIMIT 200
+  `).all();
+  res.json(log);
+});
+
+// Admin panel HTML (protected by CF Access + admin key session)
+router.get('/panel', (req, res) => {
+  const email = (req.headers['cf-access-authenticated-user-email'] || '').toLowerCase().trim();
+  if (email !== process.env.ADMIN_EMAIL) return res.status(403).send('Access denied.');
+  res.sendFile(require('path').join(__dirname, '..', 'templates', 'admin-panel.html'));
 });
 
 module.exports = router;

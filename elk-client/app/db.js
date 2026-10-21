@@ -8,6 +8,15 @@ const db = new Database(DB_PATH);
 db.pragma('journal_mode = WAL');
 db.pragma('foreign_keys = ON');
 
+// Migrations — run once, safe to re-run
+const migrations = [
+  `ALTER TABLE cases ADD COLUMN deliverables_url TEXT`,
+  `ALTER TABLE cases ADD COLUMN deliverables_label TEXT`,
+];
+for (const sql of migrations) {
+  try { db.exec(sql); } catch (_) {}
+}
+
 db.exec(`
   CREATE TABLE IF NOT EXISTS clients (
     id TEXT PRIMARY KEY,

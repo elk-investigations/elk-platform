@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ELK Admin Panel</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+:root {
+  --bg: #0B0F1A; --bg2: #111827; --bg3: #1A2235; --border: rgba(255,255,255,.07);
+  --gold: #C9A96E; --gold-lt: rgba(201,169,110,.12); --teal: #4DC9A7; --teal-lt: rgba(77,201,167,.12);
+  --red: #E05252; --red-lt: rgba(224,82,82,.12);
+  --text1: #F0EDE6; --text2: #A0AEC0; --text3: #4A5568;
+  --radius: 6px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text1);min-height:100vh;font-size:14px}
+
+/* Layout */
+.shell{display:grid;grid-template-columns:220px 1fr;min-height:100vh}
+.sidebar{background:var(--bg2);border-right:1px solid var(--border);padding:24px 0;display:flex;flex-direction:column}
+.sid-logo{padding:0 20px 24px;border-bottom:1px solid var(--border);margin-bottom:16px}
+.sid-logo .mark{font-family:'IBM Plex Mono',monospace;font-size:18px;font-weight:600;color:var(--gold);letter-spacing:.06em}
+.sid-logo .sub{font-size:10px;color:var(--text3);letter-spacing:.12em;text-transform:uppercase;margin-top:2px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 20px;cursor:pointer;color:var(--text2);font-size:13px;font-weight:500;border-left:2px solid transparent;transition:all .15s}
+.nav-item:hover{color:var(--text1);background:rgba(255,255,255,.03)}
+.nav-item.active{color:var(--gold);border-left-color:var(--gold);background:var(--gold-lt)}
+.sid-bottom{margin-top:auto;padding:16px 20px;border-top:1px solid var(--border)}
+.logout-btn{width:100%;padding:8px;background:transparent;border:1px solid var(--border);color:var(--text3);font-size:12px;cursor:pointer;border-radius:var(--radius);text-align:center}
+.logout-btn:hover{border-color:var(--red);color:var(--red)}
+
+.main{display:flex;flex-direction:column;overflow:hidden}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:16px 28px;border-bottom:1px solid var(--border);background:var(--bg2)}
+.topbar h1{font-size:15px;font-weight:600;color:var(--text1)}
+.topbar .badge{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--teal);background:var(--teal-lt);border:1px solid rgba(77,201,167,.2);padding:3px 10px;border-radius:3px}
+.content{padding:28px;overflow-y:auto;flex:1}
+
+/* Panels */
+.panel{display:none}
+.panel.active{display:block}
+
+/* Stats row */
+.stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-bottom:28px}
+.stat{background:var(--bg2);border:1px solid var(--border);padding:16px;border-radius:var(--radius)}
+.stat-val{font-family:'IBM Plex Mono',monospace;font-size:24px;font-weight:600;color:var(--gold)}
+.stat-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-top:4px}
+
+/* Tables */
+.table-wrap{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+table{width:100%;border-collapse:collapse}
+th{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.12em;color:var(--text3);padding:10px 14px;border-bottom:1px solid var(--border);text-align:left;background:var(--bg3)}
+td{padding:12px 14px;border-bottom:1px solid var(--border);font-size:13px;color:var(--text2);vertical-align:top}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,255,255,.02)}
+.mono{font-family:'IBM Plex Mono',monospace;font-size:12px}
+
+/* Status badges */
+.status{display:inline-block;font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:3px 8px;border-radius:3px}
+.s-intake{background:rgba(160,174,192,.1);color:#A0AEC0}
+.s-active{background:var(--teal-lt);color:var(--teal)}
+.s-surveillance{background:rgba(201,169,110,.15);color:var(--gold)}
+.s-report{background:rgba(129,140,248,.15);color:#818CF8}
+.s-closed{background:rgba(74,85,104,.2);color:#4A5568}
+
+/* Forms */
+.form-row{display:grid;gap:12px;margin-bottom:16px}
+.form-row.cols-2{grid-template-columns:1fr 1fr}
+.form-row.cols-3{grid-template-columns:1fr 1fr 1fr}
+label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);display:block;margin-bottom:6px}
+input,select,textarea{width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text1);padding:9px 12px;border-radius:var(--radius);font-size:13px;font-family:'Inter',sans-serif;outline:none;transition:border-color .15s}
+input:focus,select:focus,textarea:focus{border-color:var(--gold)}
+textarea{resize:vertical;min-height:80px}
+select option{background:var(--bg2)}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border:none;border-radius:var(--radius);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s}
+.btn-gold{background:var(--gold);color:#0B0F1A}
+.btn-gold:hover{background:#D4B57A}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--text2)}
+.btn-outline:hover{border-color:var(--gold);color:var(--gold)}
+.btn-red{background:transparent;border:1px solid rgba(224,82,82,.3);color:var(--red);font-size:12px;padding:5px 10px}
+.btn-teal{background:var(--teal-lt);border:1px solid rgba(77,201,167,.3);color:var(--teal)}
+.btn-sm{padding:5px 10px;font-size:12px}
+
+/* Cards */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:16px}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.card-title{font-size:13px;font-weight:600;color:var(--text1)}
+.section-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.14em;color:var(--text3);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+
+/* Case detail drawer */
+.drawer{position:fixed;right:0;top:0;bottom:0;width:520px;background:var(--bg2);border-left:1px solid var(--border);z-index:200;overflow-y:auto;transform:translateX(100%);transition:transform .25s;padding:24px}
+.drawer.open{transform:translateX(0)}
+.drawer-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.drawer-close{background:none;border:none;color:var(--text3);font-size:20px;cursor:pointer;padding:4px}
+.drawer-close:hover{color:var(--text1)}
+
+/* Toast */
+.toast{position:fixed;bottom:24px;right:24px;background:#1E293B;border:1px solid var(--border);color:var(--text1);padding:12px 18px;border-radius:var(--radius);font-size:13px;z-index:999;opacity:0;transform:translateY(8px);transition:all .2s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}
+.toast.ok{border-left:3px solid var(--teal)}
+.toast.err{border-left:3px solid var(--red)}
+
+.updates-feed{display:flex;flex-direction:column;gap:10px;margin-top:12px}
+.update-item{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:12px}
+.update-meta{font-size:11px;color:var(--text3);margin-top:4px;font-family:'IBM Plex Mono',monospace}
+.vis-badge{font-size:10px;padding:2px 6px;border-radius:2px;background:var(--teal-lt);color:var(--teal)}
+.vis-badge.internal{background:rgba(224,82,82,.1);color:var(--red)}
+
+@media(max-width:768px){.shell{grid-template-columns:1fr}.sidebar{display:none}}
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <aside class="sidebar">
+    <div class="sid-logo">
+      <div class="mark">ELK</div>
+      <div class="sub">Admin Panel</div>
+    </div>
+    <div class="nav-item active" onclick="showPanel('dashboard')">Dashboard</div>
+    <div class="nav-item" onclick="showPanel('cases')">Cases</div>
+    <div class="nav-item" onclick="showPanel('clients')">Clients</div>
+    <div class="nav-item" onclick="showPanel('new-case')">+ New Case</div>
+    <div class="nav-item" onclick="showPanel('new-client')">+ New Client</div>
+    <div class="nav-item" onclick="showPanel('audit')">Audit Log</div>
+    <div class="sid-bottom">
+      <button class="logout-btn" onclick="logout()">Sign Out</button>
+    </div>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <h1 id="panel-title">Dashboard</h1>
+      <div class="badge">ELK INVESTIGATIONS · ADMIN</div>
+    </div>
+    <div class="content">
+
+      <!-- Dashboard -->
+      <div class="panel active" id="panel-dashboard">
+        <div class="stats" id="stats-row">
+          <div class="stat"><div class="stat-val" id="s-total">—</div><div class="stat-label">Total Cases</div></div>
+          <div class="stat"><div class="stat-val" id="s-active">—</div><div class="stat-label">Active</div></div>
+          <div class="stat"><div class="stat-val" id="s-clients">—</div><div class="stat-label">Clients</div></div>
+          <div class="stat"><div class="stat-val" id="s-closed">—</div><div class="stat-label">Closed</div></div>
+        </div>
+        <div class="section-label">Recent Cases</div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Case #</th><th>Client</th><th>Subject</th><th>Status</th><th>Updated</th><th></th></tr></thead>
+            <tbody id="recent-cases"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- All Cases -->
+      <div class="panel" id="panel-cases">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Case #</th><th>Client</th><th>Subject</th><th>Type</th><th>Status</th><th>Deliverables</th><th>Updated</th><th></th></tr></thead>
+            <tbody id="all-cases"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Clients -->
+      <div class="panel" id="panel-clients">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Created</th><th>Status</th></tr></thead>
+            <tbody id="all-clients"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- New Case -->
+      <div class="panel" id="panel-new-case">
+        <div class="card" style="max-width:600px">
+          <div class="section-label">Create New Case</div>
+          <div class="form-row cols-2">
+            <div><label>Case Number</label><input id="nc-number" placeholder="ELK-HR-2026-10-001-JS"></div>
+            <div><label>Client</label><select id="nc-client"><option value="">Select client…</option></select></div>
+          </div>
+          <div class="form-row cols-2">
+            <div><label>Subject Name</label><input id="nc-subject" placeholder="John Smith"></div>
+            <div><label>Case Type</label>
+              <select id="nc-type">
+                <option value="surveillance">Surveillance</option>
+                <option value="background">Background Investigation</option>
+                <option value="ime">IME Field</option>
+                <option value="general">General</option>
+                <option value="insurance">Insurance Defense</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div><label>Status</label>
+              <select id="nc-status">
+                <option value="intake">Intake</option>
+                <option value="active" selected>Active</option>
+                <option value="surveillance">Surveillance</option>
+                <option value="report">Report</option>
+                <option value="closed">Closed</option>
+              </select>
+            </div>
+          </div>
+          <button class="btn btn-gold" onclick="createCase()">Create Case</button>
+        </div>
+      </div>
+
+      <!-- New Client -->
+      <div class="panel" id="panel-new-client">
+        <div class="card" style="max-width:500px">
+          <div class="section-label">Create Client Account</div>
+          <div class="form-row cols-2">
+            <div><label>Full Name</label><input id="cl-name" placeholder="Jennifer Brevorka"></div>
+            <div><label>Email (used for portal login)</label><input id="cl-email" type="email" placeholder="j.brevorka@hodgsonruss.com"></div>
+          </div>
+          <div class="form-row">
+            <div><label>Phone (optional)</label><input id="cl-phone" placeholder="(212) 555-0100"></div>
+          </div>
+          <button class="btn btn-gold" onclick="createClient()">Create Account</button>
+          <p style="font-size:11px;color:var(--text3);margin-top:12px">Client logs in via Cloudflare OTP at their email — no password needed.</p>
+        </div>
+      </div>
+
+      <!-- Audit Log -->
+      <div class="panel" id="panel-audit">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Client</th><th>Case #</th><th>Action</th><th>IP</th><th>Accessed</th></tr></thead>
+            <tbody id="audit-log"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Case Detail Drawer -->
+<div class="drawer" id="case-drawer">
+  <div class="drawer-header">
+    <div class="card-title" id="drawer-title">Case Detail</div>
+    <button class="drawer-close" onclick="closeDrawer()">✕</button>
+  </div>
+  <div id="drawer-content"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const ADMIN_KEY = prompt('Admin key:');
+if (!ADMIN_KEY) { document.body.innerHTML = '<p style="padding:40px;color:#fff">No key provided.</p>'; }
+
+const headers = () => ({ 'Content-Type': 'application/json', 'x-admin-key': ADMIN_KEY });
+
+function toast(msg, type='ok') {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = `toast show ${type}`;
+  setTimeout(() => t.className = 'toast', 3000);
+}
+
+function showPanel(name) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('panel-' + name).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => {
+    if (n.textContent.toLowerCase().includes(name.replace('-', ' '))) n.classList.add('active');
+  });
+  const titles = { dashboard:'Dashboard', cases:'All Cases', clients:'Clients', 'new-case':'New Case', 'new-client':'New Client', audit:'Audit Log' };
+  document.getElementById('panel-title').textContent = titles[name] || name;
+  if (name === 'dashboard') loadDashboard();
+  if (name === 'cases') loadCases();
+  if (name === 'clients') loadClients();
+  if (name === 'new-case') loadClientsForSelect();
+  if (name === 'audit') loadAudit();
+}
+
+function statusBadge(s) {
+  const map = { intake:'s-intake', active:'s-active', surveillance:'s-surveillance', report:'s-report', closed:'s-closed' };
+  return `<span class="status ${map[s]||'s-intake'}">${s}</span>`;
+}
+
+function fmtDate(d) {
+  if (!d) return '—';
+  return new Date(d + 'Z').toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+}
+
+async function loadDashboard() {
+  const [casesR, clientsR] = await Promise.all([
+    fetch('/admin/cases', { headers: headers() }).then(r => r.json()),
+    fetch('/admin/clients', { headers: headers() }).then(r => r.json())
+  ]);
+  document.getElementById('s-total').textContent = casesR.length || 0;
+  document.getElementById('s-active').textContent = casesR.filter(c => c.status === 'active').length;
+  document.getElementById('s-clients').textContent = clientsR.length || 0;
+  document.getElementById('s-closed').textContent = casesR.filter(c => c.status === 'closed').length;
+  document.getElementById('recent-cases').innerHTML = casesR.slice(0,10).map(c => `
+    <tr>
+      <td class="mono">${c.case_number}</td>
+      <td>${c.client_name}</td>
+      <td>${c.subject_name || '—'}</td>
+      <td>${statusBadge(c.status)}</td>
+      <td style="font-size:12px;color:var(--text3)">${fmtDate(c.updated_at)}</td>
+      <td><button class="btn btn-outline btn-sm" onclick="openDrawer('${c.id}')">Manage</button></td>
+    </tr>`).join('');
+}
+
+async function loadCases() {
+  const cases = await fetch('/admin/cases', { headers: headers() }).then(r => r.json());
+  document.getElementById('all-cases').innerHTML = cases.map(c => `
+    <tr>
+      <td class="mono">${c.case_number}</td>
+      <td>${c.client_name}</td>
+      <td>${c.subject_name || '—'}</td>
+      <td style="font-size:12px">${c.case_type || '—'}</td>
+      <td>${statusBadge(c.status)}</td>
+      <td>${c.deliverables_url ? `<a href="${c.deliverables_url}" target="_blank" style="color:var(--teal);font-size:12px">Link ↗</a>` : '<span style="color:var(--text3);font-size:12px">—</span>'}</td>
+      <td style="font-size:12px;color:var(--text3)">${fmtDate(c.updated_at)}</td>
+      <td><button class="btn btn-outline btn-sm" onclick="openDrawer('${c.id}')">Manage</button></td>
+    </tr>`).join('');
+}
+
+async function loadClients() {
+  const clients = await fetch('/admin/clients', { headers: headers() }).then(r => r.json());
+  document.getElementById('all-clients').innerHTML = clients.map(c => `
+    <tr>
+      <td>${c.name}</td>
+      <td class="mono" style="font-size:12px">${c.email}</td>
+      <td>${c.phone || '—'}</td>
+      <td style="font-size:12px;color:var(--text3)">${fmtDate(c.created_at)}</td>
+      <td><span class="status ${c.active ? 's-active' : 's-closed'}">${c.active ? 'Active' : 'Inactive'}</span></td>
+    </tr>`).join('');
+}
+
+async function loadClientsForSelect() {
+  const clients = await fetch('/admin/clients', { headers: headers() }).then(r => r.json());
+  document.getElementById('nc-client').innerHTML = '<option value="">Select client…</option>' +
+    clients.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+}
+
+async function loadAudit() {
+  const log = await fetch('/admin/audit-log', { headers: headers() }).then(r => r.json());
+  document.getElementById('audit-log').innerHTML = log.length ? log.map(l => `
+    <tr>
+      <td>${l.client_email}</td>
+      <td class="mono" style="font-size:12px">${l.case_number || '—'}</td>
+      <td>${l.action}</td>
+      <td style="font-size:12px;color:var(--text3)">${l.ip_address || '—'}</td>
+      <td style="font-size:12px;color:var(--text3)">${fmtDate(l.accessed_at)}</td>
+    </tr>`).join('') : '<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:24px">No access events recorded yet.</td></tr>';
+}
+
+async function createCase() {
+  const body = {
+    case_number: document.getElementById('nc-number').value.trim(),
+    client_id: document.getElementById('nc-client').value,
+    subject_name: document.getElementById('nc-subject').value.trim(),
+    case_type: document.getElementById('nc-type').value,
+    status: document.getElementById('nc-status').value
+  };
+  if (!body.case_number || !body.client_id) return toast('Case number and client required', 'err');
+  const r = await fetch('/admin/cases', { method:'POST', headers: headers(), body: JSON.stringify(body) }).then(r => r.json());
+  if (r.ok) { toast('Case created'); showPanel('cases'); }
+  else toast(r.error || 'Error', 'err');
+}
+
+async function createClient() {
+  const body = {
+    name: document.getElementById('cl-name').value.trim(),
+    email: document.getElementById('cl-email').value.trim(),
+    phone: document.getElementById('cl-phone').value.trim(),
+    password: crypto.randomUUID()
+  };
+  if (!body.name || !body.email) return toast('Name and email required', 'err');
+  const r = await fetch('/admin/clients', { method:'POST', headers: headers(), body: JSON.stringify(body) }).then(r => r.json());
+  if (r.ok) { toast('Client account created'); showPanel('clients'); }
+  else toast(r.error || 'Error', 'err');
+}
+
+async function openDrawer(caseId) {
+  const data = await fetch(`/admin/cases/${caseId}`, { headers: headers() }).then(r => r.json());
+  const c = data.case;
+  document.getElementById('drawer-title').textContent = c.case_number;
+  document.getElementById('drawer-content').innerHTML = `
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
+      ${statusBadge(c.status)}
+      <span style="font-size:12px;color:var(--text3)">${c.case_type || ''} · ${c.client_name}</span>
+    </div>
+    ${c.subject_name ? `<p style="font-size:13px;margin-bottom:16px;color:var(--text2)">Subject: <strong>${c.subject_name}</strong></p>` : ''}
+
+    <div class="section-label">Change Status</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px">
+      ${['intake','active','surveillance','report','closed'].map(s =>
+        `<button class="btn btn-outline btn-sm" onclick="updateStatus('${c.id}','${s}')">${s}</button>`
+      ).join('')}
+    </div>
+
+    <div class="section-label">Deliverables Link</div>
+    <div style="display:flex;gap:8px;margin-bottom:20px">
+      <input id="d-url" value="${c.deliverables_url || ''}" placeholder="https://synology-drive-share-link" style="flex:1">
+      <button class="btn btn-teal btn-sm" onclick="saveDeliverables('${c.id}')">Save</button>
+    </div>
+
+    <div class="section-label">Post Case Update</div>
+    <div style="margin-bottom:20px">
+      <textarea id="upd-msg" placeholder="Surveillance conducted. Subject observed at…" style="margin-bottom:8px"></textarea>
+      <div style="display:flex;align-items:center;gap:12px">
+        <label style="display:flex;align-items:center;gap:6px;font-size:12px;text-transform:none;letter-spacing:0;color:var(--text2);cursor:pointer">
+          <input type="checkbox" id="upd-vis" checked style="width:auto"> Visible to client
+        </label>
+        <button class="btn btn-gold btn-sm" onclick="postUpdate('${c.id}')">Post Update</button>
+      </div>
+    </div>
+
+    <div class="section-label">Update History (${data.updates.length})</div>
+    <div class="updates-feed">
+      ${data.updates.length ? data.updates.map(u => `
+        <div class="update-item">
+          <div style="font-size:13px;color:var(--text1)">${u.message}</div>
+          <div class="update-meta">${fmtDate(u.created_at)} · ${u.posted_by}
+            <span class="vis-badge ${u.visible_to_client ? '' : 'internal'}">${u.visible_to_client ? 'Client visible' : 'Internal'}</span>
+          </div>
+        </div>`).join('') : '<p style="font-size:12px;color:var(--text3)">No updates yet.</p>'}
+    </div>
+  `;
+  document.getElementById('case-drawer').classList.add('open');
+}
+
+function closeDrawer() { document.getElementById('case-drawer').classList.remove('open'); }
+
+async function updateStatus(caseId, status) {
+  const r = await fetch(`/admin/cases/${caseId}/status`, { method:'PATCH', headers: headers(), body: JSON.stringify({ status }) }).then(r => r.json());
+  if (r.ok) { toast(`Status → ${status}`); openDrawer(caseId); }
+  else toast('Error', 'err');
+}
+
+async function saveDeliverables(caseId) {
+  const url = document.getElementById('d-url').value.trim();
+  const r = await fetch(`/admin/cases/${caseId}/deliverables`, { method:'PATCH', headers: headers(), body: JSON.stringify({ deliverables_url: url, deliverables_label: 'View Deliverables' }) }).then(r => r.json());
+  if (r.ok) toast('Deliverables link saved');
+  else toast('Error', 'err');
+}
+
+async function postUpdate(caseId) {
+  const message = document.getElementById('upd-msg').value.trim();
+  const visible_to_client = document.getElementById('upd-vis').checked;
+  if (!message) return toast('Message required', 'err');
+  const r = await fetch(`/admin/cases/${caseId}/update`, { method:'POST', headers: headers(), body: JSON.stringify({ message, visible_to_client }) }).then(r => r.json());
+  if (r.ok) { toast('Update posted'); document.getElementById('upd-msg').value = ''; openDrawer(caseId); }
+  else toast('Error', 'err');
+}
+
+function logout() {
+  try { fetch('/auth/logout', { method:'POST' }); } catch(_) {}
+  window.location.href = 'https://elkinvestigations.cloudflareaccess.com/cdn-cgi/access/logout';
+}
+
+loadDashboard();
+</script>
+</body>
+</html>
