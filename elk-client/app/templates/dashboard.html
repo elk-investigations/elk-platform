@@ -668,7 +668,23 @@ function renderPanel(d) {
     </div>`;
   }
 
-  if (!pending.length && !docs.length && !updates.length) {
+  /* Deliverables — Synology share link */
+  if (c.deliverables_url) {
+    html += `<div class="p-section">
+      <div class="p-sec-title">📦 Deliverables</div>
+      <div class="doc-row">
+        <div class="doc-icon">🗂</div>
+        <div class="doc-info">
+          <div class="doc-name">${esc(c.deliverables_label || 'View Deliverables')}</div>
+          <div class="doc-meta">Final report &amp; video — secure shared folder</div>
+        </div>
+        <a class="btn-dl" href="${c.deliverables_url}" target="_blank" rel="noopener"
+           onclick="logDeliverableAccess('${c.id}','${esc(c.case_number)}')">Open ↗</a>
+      </div>
+    </div>`;
+  }
+
+  if (!pending.length && !docs.length && !updates.length && !c.deliverables_url) {
     html += `<p class="panel-empty">No updates yet. ELK Investigations will post updates here as your case progresses. You'll receive a notification when something is added.</p>`;
   }
 
@@ -699,6 +715,16 @@ async function respond(approvalId, action) {
 function closePanel() {
   document.getElementById('panel').classList.remove('open');
   document.getElementById('overlay').style.display = 'none';
+}
+
+async function logDeliverableAccess(caseId, caseNumber) {
+  try {
+    await fetch('/log/deliverables-access', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ case_id: caseId, case_number: caseNumber, action: 'view_deliverables' })
+    });
+  } catch (_) {}
 }
 
 async function logout() {
